@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student</title>
+    <link href="/css/styles.css" rel="stylesheet">
+</head>
+<body class="bg-gradient-to-r from-green-500 to-teal-600 min-h-screen flex items-center justify-center">
+    <div class="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
+        <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">Student Panel</h1>
+        <input id="game-code" class="w-full p-3 border border-gray-300 rounded-lg mb-4 text-black" placeholder="Enter Game Code">
+        <button id="join-game" class="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition duration-300">
+            Join Game
+        </button>
+        <div id="question" class="mt-6 hidden">
+            <h2 class="text-xl font-bold text-gray-700 mb-4">Question</h2>
+            <p id="question-text" class="text-lg text-gray-800 mb-4"></p>
+            <div id="options" class="space-y-2"></div>
+            <div id="timer" class="text-center text-2xl font-bold text-gray-800 mt-4">
+                <span id="time-left">15</span>s
+            </div>
+        </div>
+        <div id="result" class="mt-6 hidden">
+            <p class="text-lg font-semibold text-center"></p>
+            <p class="text-lg font-semibold text-center">Score: <span id="score">0</span></p>
+        </div>
+    </div>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        let timer = 15;
+        let timerInterval = null;
+        let selectedAnswer = null;
+
+        document.getElementById('join-game').addEventListener('click', () => {
+            const code = document.getElementById('game-code').value;
+            socket.emit('join game', code);
+        });
+
+        socket.on('join success', (message) => {
+            alert(message);
+            document.getElementById('question').classList.remove('hidden');
+        });
+
+        socket.on('new question', (question) => {
+            document.getElementById('question-text').textContent = question.question;
+            const optionsDiv = document.getElementById('options');
+            optionsDiv.innerHTML = '';
+            question.options.forEach((option) => {
+                const button = document.createElement('button');
+                button.textContent = option;
+                button.className = 'w-full bg-gray-200 p-3 rounded-lg hover:bg-gray-300 transition duration-300';
+                button.addEventListener('click', () => {
+                    if (!selectedAnswer) {
+                        selectedAnswer = option;
+                        socket.emit('submit answer', { questionId: question._id, answer: option });
+                        button.classList.add('bg-blue-500', 'text-white'); // Highlight selected answer
+                    }
+                });
+                optionsDiv.appendChild(button);
+            });
+
+            // Start the timer
+            timer = 15;
+            document.getElementById('time-left').textContent = timer;
+            if (timerInterval) clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                timer--;
+                document.getElementById('time-left').textContent = timer;
+                if (timer <= 0) {
+                    clearInterval(timerInterval);
+                }
+            }, 1000);
+        });
+
+        socket.on('answer result', (data) => {
+            const resultDiv = document.getElementById('result');
+            resultDiv.classList.remove('hidden');
+            resultDiv.querySelector('p').textContent = data.isCorrect ? 'Correct!' : 'Incorrect!';
+            document.getElementById('score').textContent = data.score;
+        });
+    </script>
+</body>
+</html>

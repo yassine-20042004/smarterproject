@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin</title>
+    <link href="/css/styles.css" rel="stylesheet">
+</head>
+<body class="bg-gradient-to-r from-blue-500 to-purple-600 min-h-screen flex items-center justify-center">
+    <div class="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
+        <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">Admin Panel</h1>
+        <button id="create-game" class="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition duration-300">
+            Create Game
+        </button>
+        <div id="game-code" class="mt-6 hidden">
+            <p class="text-lg font-semibold text-gray-700">Game Code: <span id="code" class="font-mono text-blue-600"></span></p>
+        </div>
+        <div id="player-count" class="mt-4 hidden">
+            <p class="text-lg font-semibold text-gray-700">Players Joined: <span id="count">0</span></p>
+        </div>
+        <button id="start-game" class="w-full bg-green-600 text-white py-2 px-4 rounded-lg mt-4 hover:bg-green-700 transition duration-300 hidden">
+            Start Game
+        </button>
+    </div>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+
+        document.getElementById('create-game').addEventListener('click', () => {
+            socket.emit('create game');
+        });
+
+        socket.on('game code', (code) => {
+            document.getElementById('game-code').classList.remove('hidden');
+            document.getElementById('code').textContent = code;
+            document.getElementById('start-game').classList.remove('hidden');
+            document.getElementById('player-count').classList.remove('hidden');
+        });
+
+        socket.on('player count', (count) => {
+            document.getElementById('count').textContent = count;
+        });
+
+        document.getElementById('start-game').addEventListener('click', () => {
+            const code = document.getElementById('code').textContent;
+            socket.emit('start game', code);
+        });
+    </script>
+</body>
+</html>
